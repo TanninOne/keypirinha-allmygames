@@ -65,17 +65,28 @@ class AllMyGames(kp.Plugin):
             "hit_hint": kp.ItemHitHint.KEEPALL,
         }
         self.__repos = {}
-        self._debug = True
+        self._debug = False
         self.dbg("foobar")
 
     def on_start(self):
-        self.__repos["Steam"] = Steam(RepoContext(self, "steam"))
-        self.__repos["Epic Games Launcher"] = EGS(RepoContext(self, "egs"))
-        self.__repos["Windows Store"] = WindowsStore(RepoContext(self, "windows"))
-        self.__repos["GOG"] = GOG(RepoContext(self, "gog"))
-        self.__repos["Origin"] = Origin(RepoContext(self, "origin"))
-        self.__repos["UPlay"] = UPlay(RepoContext(self, "uplay"))
+        stores = [
+            ("Steam", Steam),
+            ("Epic Games Store", EGS),
+            ("Windows Store", WindowsStore),
+            ("GOG", GOG),
+            ("Origin", Origin),
+            ("UPlay", UPlay),
+        ]
         # TODO: bethesda.net, rockstar launcher, battle.net
+
+        for candidate in stores:
+            name, clazz = candidate
+            try:
+                self.__repos[name] = clazz(RepoContext(self, name))
+            except Exception as e:
+                # probably just not installed
+                self.info("failed to initialize repo", name, e)
+
         self.info("games found", list(map(lambda repo: "{}: {}".format(repo, len(self.__repos[repo].items)), self.__repos.keys())))
 
     def on_catalog(self):
