@@ -19,7 +19,7 @@ https://github.com/TanninOne/keypirinha-allmygames/releases
 
 ## Install
 
-Once the `allmygames.keypirinha-package` file is installed,
+Once the `allmygames.keypirinha-package` file is downloaded,
 move it to the `InstalledPackage` folder located at:
 
 * `Keypirinha\portable\Profile\InstalledPackages` in **Portable mode**
