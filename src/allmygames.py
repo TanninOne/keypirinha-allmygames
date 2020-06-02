@@ -112,6 +112,7 @@ class AllMyGames(kp.Plugin):
             **self.__item_base,
             "short_desc": "Launch via {0}".format(repo),
             **item,
+            "label": "AMG {}: {}".format(repo, item["label"]),
             "data_bag": repo + "|" + item["target"],
             "icon_handle": icon_handle,
         }
