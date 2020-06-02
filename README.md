@@ -33,6 +33,12 @@ move it to the `InstalledPackage` folder located at:
 
 ## Change Log
 
+### v1.1
+
+* fixed steam items in default library missing
+* prefixing catalog items
+* added icons for windows store items
+
 ### v1.0
 
 * Initial release
