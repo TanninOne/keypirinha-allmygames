@@ -4,6 +4,14 @@ from ..util import RegKeyIter
 
 import os
 from xml.dom import minidom
+from glob import glob
+
+def getText(nodelist):
+    res = []
+    for node in nodelist:
+        if node.nodeType == node.TEXT_NODE:
+            res.append(node.data)
+    return ''.join(res)
 
 class WindowsStore:
     REPOSITORY_PATH = R"Local Settings\Software\Microsoft\Windows\CurrentVersion\AppModel\Repository\Packages"
@@ -31,6 +39,22 @@ class WindowsStore:
         return list(map(self.__to_catalog, self.__games))
 
     def fetch_icon(self, item, cache_path):
+        if item["item"]["logo_path"] != None:
+            # the logo_path is unfortunately not the actual file path, there may be different variants
+            # for high-contrast and dpi scaled mods
+            filepath, ext = os.path.splitext(item["item"]["logo_path"])
+            relpath = os.path.dirname(filepath)
+            basename = os.path.basename(filepath)
+
+            # find all variations of the icon (contrast, scale)
+            pattern = os.path.join(item["item"]["root_path"], relpath, "**", "{}*{}".format(basename, ext))
+            # out of the icons we just use the one with the shortest name, should be the "basic"
+            # one without further specifiers
+            logos = list(sorted(glob(pattern, recursive=True), key = lambda x: len(x)))
+            if len(logos) > 0:
+                return logos[0]
+
+        # if no other icon was found, try to get one from the exe
         exe_path = os.path.join(item["item"]["root_path"], item["item"]["exe_path"])
         return "@{},0".format(exe_path)
 
@@ -67,6 +91,13 @@ class WindowsStore:
                 exeid = app.getAttribute("Id")
                 exe_path = app.getAttribute("Executable")
 
+                logo_path = None
+                try:
+                    visuals = app.getElementsByTagName("uap:VisualElements")[0]
+                    logo_path = visuals.getAttribute("Square150x150Logo")
+                except Exception as e:
+                    self.__context.info("failed to get logo", e)
+
                 id_parts = sub_key_name.split("_")
                 games.append({
                     "appid": id_parts[0],
@@ -75,6 +106,7 @@ class WindowsStore:
                     "exeid": exeid,
                     "root_path": root_path,
                     "exe_path": exe_path,
+                    "logo_path": logo_path
                 })
             except Exception as e:
                 # This may be an error but most likely it's simply not a "proper" application we
