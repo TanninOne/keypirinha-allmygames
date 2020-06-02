@@ -76,6 +76,7 @@ class Steam:
         context.info("install path", self.__install_path)
         self.__appinfo = self.__get_appinfo(self.__install_path)
         library_paths = self.__get_library_paths(self.__install_path)
+        library_paths.insert(0, self.__install_path)
         context.info("libraries", library_paths)
 
         games = []
