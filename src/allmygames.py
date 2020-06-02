@@ -4,6 +4,7 @@ import keypirinha_net as kpnet
 
 import os
 import re
+from glob import glob
 
 from .lib.steam import Steam
 from .lib.egs import EGS
@@ -123,29 +124,33 @@ class AllMyGames(kp.Plugin):
         target = re.sub(r"[<>:\"/\\|?*]", "_", item["target"])
         cache_icon_path: str = os.path.join(cache_path, "{repo}_{target}".format(repo=repo, target=target))
 
-        # if the icon has to be downloaded or is otherwise expensive to generate, the game script
-        # can use the cache_icon_path parameter as the basis for the cache file
-        # (appending the file extension)
-        # either way they return a path is either
-        # - a cache:// url if the script cached the icon itself
-        # - a @<PE path> shell resource if it's an exe
-        # - a regular file path
-        # in the latter part we do the caching ourselves because load_icon doesn't support loading
-        # files directly
-        updated_path = self.__repos[repo].fetch_icon(item, cache_icon_path)
-
-        if updated_path.startswith("cache://") or\
-            updated_path.startswith("@"):
-            cache_icon_path = updated_path
+        cached = glob(cache_icon_path + ".*")
+        if len(cached) > 0:
+            cache_icon_path =  "cache://{}/{}".format(self.package_full_name(), os.path.basename(cached[0]))
         else:
-            ext = os.path.splitext(updated_path)[1]
-            cache_icon_path += ext
-            with open(updated_path, "rb") as file_in, \
-                open(cache_icon_path, "wb") as file_out:
-                file_out.write(file_in.read())
-            cache_icon_path = "cache://{}/{}".format(
-                self.package_full_name(),
-                os.path.basename(cache_icon_path))
+            # if the icon has to be downloaded or is otherwise expensive to generate, the game script
+            # can use the cache_icon_path parameter as the basis for the cache file
+            # (appending the file extension)
+            # either way they return a path is either
+            # - a cache:// url if the script cached the icon itself
+            # - a @<PE path> shell resource if it's an exe
+            # - a regular file path
+            # in the latter case we do the caching ourselves because load_icon doesn't support loading
+            # files directly
+            updated_path = self.__repos[repo].fetch_icon(item, cache_icon_path)
+
+            if updated_path.startswith("cache://") or\
+                updated_path.startswith("@"):
+                cache_icon_path = updated_path
+            else:
+                ext = os.path.splitext(updated_path)[1]
+                cache_icon_path += ext
+                with open(updated_path, "rb") as file_in, \
+                    open(cache_icon_path, "wb") as file_out:
+                    file_out.write(file_in.read())
+                cache_icon_path = "cache://{}/{}".format(
+                    self.package_full_name(),
+                    os.path.basename(cache_icon_path))
 
         self.dbg("icon cache path", cache_icon_path)
         return self.load_icon(cache_icon_path)
