@@ -18,7 +18,7 @@ class Origin:
         self.__games = self.__read_manifest(self.__exe_path)
 
     def run(self, kpu, appid, call_args):
-        target = Origin.LAUNCHER_CMD.format(name=appid);
+        target = Origin.LAUNCHER_CMD.format(name=appid)
         kpu.shell_execute(target)
 
     @property

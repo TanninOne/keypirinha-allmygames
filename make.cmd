@@ -1,7 +1,7 @@
 @echo off
 setlocal
 
-set PACKAGE_NAME=allmygames
+set PACKAGE_NAME=AllMyGames
 set INSTALL_DIR=%APPDATA%\Keypirinha\InstalledPackages
 
 if "%1"=="" goto help
