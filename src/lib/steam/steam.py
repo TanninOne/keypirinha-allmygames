@@ -211,6 +211,5 @@ class Steam:
                         "launchers": launchers,
                     })
             except Exception as e:
-                self.__context.err("Failed to read manifest", manifest_path, e)
-                raise e
+                self.__context.warn("Failed to read manifest", manifest_path, e)
         return games
