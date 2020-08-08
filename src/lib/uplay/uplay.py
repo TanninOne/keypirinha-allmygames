@@ -7,8 +7,8 @@ from urllib import parse
 
 class UPlay:
     REG_INSTALL_PATH = R"SOFTWARE\WOW6432Node\Ubisoft\Launcher"
-    REG_DETAILS_PATH = R"SOFTWARE\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Uplay Install {appid}"
-    LAUNCHER_CMD = "uplay://launch/${appId}/0"
+    REG_DETAILS_PATH = R"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\Uplay Install {appid}"
+    LAUNCHER_CMD = "uplay://launch/{appId}/0"
 
     __context = None
     __valid = False
@@ -21,7 +21,7 @@ class UPlay:
         self.__games = self.__read_manifest()
 
     def run(self, kpu, target, call_args):
-        cmd = UPlay.LAUNCHER_CMD.format(appid=target)
+        cmd = UPlay.LAUNCHER_CMD.format(appId=target)
 
         kpu.shell_execute(cmd)
 
