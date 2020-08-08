@@ -1,6 +1,8 @@
+import json
 import logging
 import os
 import subprocess
+import sys
 import time
 from hashlib import sha1
 from .vdf import load as vdfload, parse_appinfo
@@ -8,16 +10,32 @@ from ..util import CILookup
 from functools import reduce
 from winreg import ConnectRegistry, OpenKeyEx, QueryValueEx, HKEY_CURRENT_USER
 
+osarch = "64" if sys.maxsize > 2**32 else "32"
+
 def to_appinfo_dict(agg, input):
     agg[str(input["appid"])] = input
     return agg
 
 def launcher_supported(game_path, launcher):
+    # ignore default launchers, these should be covered by the option to start
+    # via -applaunch
+    if launcher.get("type", "none") == "default":
+        return False
+
+    config = launcher.get("config", {})
     # I don't actually know if the oslist is comma separated because I couldn't find
     # an example of a launcher that supported more than one os. how would it? why would it?
-    supported_oses = launcher.get("config", {}).get(
-        "oslist", "windows").split(",")
+    supported_oses = config.get("oslist", "windows").split(",")
     if not "windows" in supported_oses:
+        return False
+
+    # skip launchers for other architectures
+    # This works under the assumption that if the game has separate launchers
+    #   for different architectures, there has to be one specifically for ours
+    # More concretely: We expect that if there is a launcher specifically for 32bit, there is
+    #   one specifically for 64bit as well, even though a 64bit system would be able to run the
+    #   32bit one too
+    if config.get("osarch", osarch) != osarch:
         return False
 
     if "executable" in launcher and\
@@ -27,6 +45,13 @@ def launcher_supported(game_path, launcher):
     return True
 
 def to_catalog(agg: list, game):
+    # always offer the option to start through steam
+    agg.append({
+        "label": game["name"],
+        "target": "|" + str(game["appid"]),
+        "item": game,
+    })
+
     if game["launchers"] is not None:
         is_supported = lambda idx: launcher_supported(game["path"], game["launchers"][idx])
         launchers = list(filter(is_supported, game["launchers"].keys()))
@@ -44,12 +69,7 @@ def to_catalog(agg: list, game):
             if "executable" in launcher:
                 entry["short_desc"] = launcher.get("executable", "") + " " + launcher.get("arguments", "")
             agg.append(entry)
-    else:
-        agg.append({
-            "label": game["name"],
-            "target": "|" + str(game["appid"]),
-            "item": game,
-        })
+
     return agg
 
 def is_steam_running():
