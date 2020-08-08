@@ -67,7 +67,7 @@ class AllMyGames(kp.Plugin):
         }
         self.__repos = {}
         self._debug = False
-        self.dbg("foobar")
+        self.__settings = self.load_settings()
 
     def on_start(self):
         stores = [
@@ -95,8 +95,11 @@ class AllMyGames(kp.Plugin):
         
         # update the repo-specific data with static and cached data
         for repo in self.__repos.keys():
-            mapper = lambda iter: self.make_item(repo, iter)
-            catalog.extend(map(mapper, self.__repos[repo].items))
+            if self.__settings.get_bool("enabled", repo, True):
+                mapper = lambda iter: self.make_item(repo, iter)
+                catalog.extend(map(mapper, self.__repos[repo].items))
+            else:
+                self.info("repo disabled in settings", repo)
 
         self.set_catalog(catalog)
 
