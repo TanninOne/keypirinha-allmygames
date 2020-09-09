@@ -93,11 +93,11 @@ class Steam:
         self.__context = context
         self.__valid = False
         self.__exe_path, self.__install_path = self.__get_install_path()
-        context.info("install path", self.__install_path)
+        context.dbg("install path", self.__install_path)
         self.__appinfo = self.__get_appinfo(self.__install_path)
         library_paths = self.__get_library_paths(self.__install_path)
         library_paths.insert(0, self.__install_path)
-        context.info("libraries", library_paths)
+        context.dbg("libraries", library_paths)
 
         games = []
         for library in library_paths:
@@ -111,7 +111,7 @@ class Steam:
             game = next(game for game in self.__games if game["appid"] == appid)
             launcher: dict = game["launchers"][launcher_id]
             if "executable" in launcher:
-                self.__context.info("starting steam game with launcher", launcher)
+                self.__context.dbg("starting steam game with launcher", launcher)
                 return self.run_directly(kpu, game, launcher, appid, call_args)
 
         return self.run_through_steam(kpu, appid, call_args)
@@ -125,7 +125,7 @@ class Steam:
             # since we're not running with steam -applaunch, steam will not be started
             # automatically but some games won't run correctly
             if not is_steam_running():
-                self.__context.info("steam not running, starting it now")
+                self.__context.dbg("steam not running, starting it now")
                 kpu.shell_execute(self.__exe_path)
                 # arbitrary, is 5 seconds enough? I think as long as steam is starting up
                 # the game will wait if necessary for it to complete initializing
@@ -137,7 +137,7 @@ class Steam:
 
     def run_through_steam(self, kpu, appid: str, call_args: str):
         target = "-applaunch {} {}".format(appid, call_args)
-        self.__context.info(
+        self.__context.dbg(
             "starting steam game through applaunch link", target)
         kpu.shell_execute(self.__exe_path, args=target)
 
@@ -186,7 +186,7 @@ class Steam:
             self.__valid = True
             return res_exe[0], os.path.normpath(res_path[0])
         except Exception as e:
-            self.__context.info("Failed to find path, maybe isn't installed", e)
+            self.__context.warn("Failed to find path, maybe isn't installed", e)
 
     def __get_appinfo(self, install_path: str):
         with open(os.path.join(install_path, 'appcache', 'appinfo.vdf'), "rb") as fd:
