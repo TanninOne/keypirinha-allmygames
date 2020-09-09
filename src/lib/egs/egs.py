@@ -68,7 +68,7 @@ class EGS:
 
         for manifest_name in filter(is_manifest, os.listdir(manifest_path)):
             try:
-                with open(os.path.join(manifest_path, manifest_name)) as fd:
+                with open(os.path.join(manifest_path, manifest_name), encoding="utf8") as fd:
                     manifest = json.load(fd)
                     if os.path.exists(manifest["InstallLocation"]):
                         games.append({
