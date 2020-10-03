@@ -13,7 +13,7 @@ class Origin:
         self.__context = context
         self.__valid = False
         self.__exe_path = self.__find_store()
-        context.info("install path", os.path.dirname(self.__exe_path))
+        context.dbg("install path", os.path.dirname(self.__exe_path))
 
         self.__games = self.__read_manifest(self.__exe_path)
 
@@ -44,7 +44,7 @@ class Origin:
             self.__valid = True
             return data_path[0]
         except Exception as e:
-            self.__context.info("Failed to find store path, maybe it isn't installed", e)
+            self.__context.warn("Failed to find store path, maybe it isn't installed", e)
 
     def __read_manifest(self, install_path):
         manifests_path = os.path.join(os.environ["ProgramData"], "Origin", "LocalContent")

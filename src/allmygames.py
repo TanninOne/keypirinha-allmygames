@@ -13,12 +13,6 @@ from .lib.gog import GOG
 from .lib.uplay import UPlay
 from .lib.windowsstore import WindowsStore
 
-def filter_dict(input, func):
-    result = dict()
-    for (key, value) in input.items():
-        if func(key, value):
-            result[key] = value
-    return result
 
 class RepoContext:
     def __init__(self, plugin: kp.Plugin, id: str):
@@ -67,10 +61,16 @@ class AllMyGames(kp.Plugin):
         }
         self.__repos = {}
         self._debug = False
-        self.__settings = self.load_settings()
 
     def on_start(self):
-        stores = [
+        self.__settings = self.load_settings()
+
+    def on_event(self, flags: int):
+        if flags & kp.Events.PACKCONFIG:
+            self.__settings = self.load_settings()
+
+    def on_catalog(self):
+        available_stores = [
             ("Steam", Steam),
             ("Epic Games Store", EGS),
             ("Windows Store", WindowsStore),
@@ -80,38 +80,38 @@ class AllMyGames(kp.Plugin):
         ]
         # TODO: bethesda.net, rockstar launcher, battle.net
 
+        stores = []
+        for store in available_stores:
+            if self.__settings.get_bool("enabled", store[0], True):
+                stores.append(store)
+
         for candidate in stores:
             name, clazz = candidate
             try:
                 self.__repos[name] = clazz(RepoContext(self, name))
             except Exception as e:
                 # probably just not installed
-                self.info("failed to initialize repo", name, e)
+                self.warn("failed to initialize repo", name, e)
 
-        self.info("games found", list(map(lambda repo: "{}: {}".format(repo, len(self.__repos[repo].items)), self.__repos.keys())))
+        self.info("Games found", ["{}: {}".format(repo, len(self.__repos[repo].items)) for repo in self.__repos.keys()])
 
-    def on_catalog(self):
         catalog = []
-        
+
         # update the repo-specific data with static and cached data
         for repo in self.__repos.keys():
-            if self.__settings.get_bool("enabled", repo, True):
-                mapper = lambda iter: self.make_item(repo, iter)
-                catalog.extend(map(mapper, self.__repos[repo].items))
-            else:
-                self.info("repo disabled in settings", repo)
+            catalog.extend(self.make_item(repo, iter) for iter in self.__repos[repo].items)
 
         self.set_catalog(catalog)
 
-    def on_execute(self, item: dict, action):
-        self.info("execute {}".format(item.data_bag()))
+    def on_execute(self, item, action):
+        self.dbg("execute {}".format(item.data_bag()))
         repo, target = item.data_bag().split('|', 1)
         self.__repos[repo].run(kpu, target, item.raw_args())
 
     def make_item(self, repo: str, item: dict):
         icon_handle = self.get_icon(repo, item)
         valid_parameters = set(['category', 'label', 'target', 'short_desc', 'args_hint', 'hit_hint'])
-        item = filter_dict(item, lambda k, v: k in valid_parameters)
+        item = {k: v for k, v in item.items() if k in valid_parameters}
         item = {
             **self.__item_base,
             "short_desc": "Launch via {0}".format(repo),

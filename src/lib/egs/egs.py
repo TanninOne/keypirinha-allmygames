@@ -14,7 +14,7 @@ class EGS:
         self.__context = context
         self.__valid = False
         install_path = self.__find_store()
-        context.info("install path", install_path)
+        context.dbg("install path", install_path)
 
         self.__exe_path = self.__get_exe_path()
 
@@ -46,18 +46,18 @@ class EGS:
             self.__valid = True
             return data_path[0]
         except Exception as e:
-            self.__context.info("Failed to find path, maybe it isn't installed", e)
+            self.__context.warn("Failed to find path, maybe it isn't installed", e)
 
     def __get_exe_path(self):
         try:
             root = ConnectRegistry(None, HKEY_LOCAL_MACHINE)
             base_key = OpenKeyEx(root, EGS.ICON_PATH)
             data_path = QueryValueEx(base_key, "")
-            self.__context.info("data path", data_path)
+            self.__context.dbg("data path", data_path)
             self.__valid = True
             return data_path[0].split(",")[0]
         except Exception as e:
-            self.__context.info("Failed to find executable, maybe it isn't installed", e)
+            self.__context.warn("Failed to find executable, maybe it isn't installed", e)
 
     def __read_manifest(self, install_path):
         manifest_path = os.path.join(install_path, "Manifests")
@@ -68,7 +68,7 @@ class EGS:
 
         for manifest_name in filter(is_manifest, os.listdir(manifest_path)):
             try:
-                with open(os.path.join(manifest_path, manifest_name)) as fd:
+                with open(os.path.join(manifest_path, manifest_name), encoding="utf8") as fd:
                     manifest = json.load(fd)
                     if os.path.exists(manifest["InstallLocation"]):
                         games.append({
