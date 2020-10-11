@@ -33,9 +33,20 @@ move it to the `InstalledPackage` folder located at:
 
 ## Change Log
 
+### v1.3
+* code cleanup and log messages more standardized (thanks to ueffel)
+* fixed: epic manifests read with wrong encoding (thanks to ueffel)
+* added options to control which items steam adds
+
+### v1.2
+* allow disabling individual stores
+* steam games are started via steam instead of running the exe
+* fixed: uplay games not starting
+* fixed: no steam entries if a defective manifest was encountered
+
 ### v1.1
 
-* fixed steam items in default library missing
+* fixed: steam items in default library missing
 * prefixing catalog items
 * added icons for windows store items
 
@@ -71,5 +82,5 @@ Windows Apps: https://github.com/ueffel/Keypirinha-WindowsApps
 (1) allmygames takes a different approach to starting steam games than keypirinha-steam. Allmygames will
 offer the different start options that steam would offer for some games, whereas keypirinha-steam always starts
 the default option (which is what most third party launchers do).
-The approach in AMG has the drawback that you might find a lot of useless options in your catalog. 
+The approach in AMG has the drawback that you might find a lot of useless options in your catalog.
 
