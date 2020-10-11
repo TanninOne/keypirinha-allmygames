@@ -12,14 +12,17 @@ from winreg import ConnectRegistry, OpenKeyEx, QueryValueEx, HKEY_CURRENT_USER
 
 osarch = "64" if sys.maxsize > 2**32 else "32"
 
+def tobool(inp: str):
+    return inp.lower() in ["true", "yes", "1"]
+
 def to_appinfo_dict(agg, input):
     agg[str(input["appid"])] = input
     return agg
 
-def launcher_supported(game_path, launcher):
+def launcher_supported(game_path, launcher, store_enabled):
     # ignore default launchers, these should be covered by the option to start
     # via -applaunch
-    if launcher.get("type", "none") == "default":
+    if store_enabled is True and launcher.get("type", "none") == "default":
         return False
 
     config = launcher.get("config", {})
@@ -38,45 +41,50 @@ def launcher_supported(game_path, launcher):
     if config.get("osarch", osarch) != osarch:
         return False
 
+    if config.get("betakey") != None:
+        return False
+
     if "executable" in launcher and\
         not os.path.exists(os.path.join(game_path, launcher["executable"])):
         return False
 
     return True
 
-def to_catalog(agg: list, game):
-    # always offer the option to start through steam
-    agg.append({
-        "label": game["name"],
-        "target": "|" + str(game["appid"]),
-        "item": game,
-    })
+def to_catalog(agg: list, game, direct, store):
+    if store is True:
+        # always offer the option to start through steam
+        agg.append({
+            "label": game["name"],
+            "target": "|" + str(game["appid"]),
+            "item": game,
+        })
 
     if game["launchers"] is not None:
-        is_supported = lambda idx: launcher_supported(game["path"], game["launchers"][idx])
+        is_supported = lambda idx: launcher_supported(game["path"], game["launchers"][idx], store)
         launchers = list(filter(is_supported, game["launchers"].keys()))
-        for launcher_idx in launchers:
-            launcher = game["launchers"][launcher_idx]
-            label = game["name"]
-            if len(launchers) > 1:
-                label += " - " + launcher.get("description", "Default")
+        if direct is True or len(launchers) > 1:
+            for launcher_idx in launchers:
+                launcher = game["launchers"][launcher_idx]
+                label = game["name"]
+                if len(launchers) > 1:
+                    label += " - " + launcher.get("description", "Default")
 
-            entry = {
-                "label": label,
-                "target": launcher_idx + "|" + str(game["appid"]),
-                "item": game,
-            }
-            if "executable" in launcher:
-                entry["short_desc"] = launcher.get("executable", "") + " " + launcher.get("arguments", "")
-            agg.append(entry)
+                entry = {
+                    "label": label,
+                    "target": launcher_idx + "|" + str(game["appid"]),
+                    "item": game,
+                }
+                if "executable" in launcher:
+                    entry["short_desc"] = launcher.get("executable", "") + " " + launcher.get("arguments", "")
+                agg.append(entry)
 
     return agg
 
 def is_steam_running():
     startupinfo = subprocess.STARTUPINFO()
     startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
-    output, err = subprocess.Popen(["tasklist.exe",
-                                    "/FI", "IMAGENAME eq steam.exe"],
+    output, err = subprocess.Popen(["tasklist.exe", 
+                                   "/FI", "IMAGENAME eq steam.exe"],
                                     stdout=subprocess.PIPE).communicate()
     return str(output).find("steam.exe") != -1
 
@@ -88,10 +96,14 @@ class Steam:
     __exe_path = None
     __install_path = None
     __appinfo = None
+    __direct = False
+    __store = True
 
-    def __init__(self, context):
+    def __init__(self, context, settings):
         self.__context = context
         self.__valid = False
+        self.__direct = tobool(settings.get("direct", "false"))
+        self.__store = tobool(settings.get("store", "true"))
         self.__exe_path, self.__install_path = self.__get_install_path()
         context.dbg("install path", self.__install_path)
         self.__appinfo = self.__get_appinfo(self.__install_path)
@@ -143,7 +155,7 @@ class Steam:
 
     @property
     def items(self):
-        return list(reduce(to_catalog, self.__games, []))
+        return list(reduce(lambda l, g: to_catalog(l, g, self.__direct, self.__store), self.__games, []))
 
     def fetch_icon(self, item: object, cache_path):
         launcher_id, appid = item["target"].split("|", 1)

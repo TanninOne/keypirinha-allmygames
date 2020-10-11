@@ -88,7 +88,7 @@ class AllMyGames(kp.Plugin):
         for candidate in stores:
             name, clazz = candidate
             try:
-                self.__repos[name] = clazz(RepoContext(self, name))
+                self.__repos[name] = clazz(RepoContext(self, name), {k: self.__settings.get(k, name) for k in self.__settings.keys(name)})
             except Exception as e:
                 # probably just not installed
                 self.warn("failed to initialize repo", name, e)

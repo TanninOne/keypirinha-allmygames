@@ -12,7 +12,7 @@ class UPlay:
 
     __context = None
     __valid = False
-    def __init__(self, context):
+    def __init__(self, context, settings):
         self.__context = context
         self.__valid = False
 

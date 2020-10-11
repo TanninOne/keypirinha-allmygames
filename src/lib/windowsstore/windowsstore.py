@@ -13,13 +13,15 @@ def getText(nodelist):
             res.append(node.data)
     return ''.join(res)
 
+
 class WindowsStore:
     REPOSITORY_PATH = R"Local Settings\Software\Microsoft\Windows\CurrentVersion\AppModel\Repository\Packages"
     LAUNCHER_ARGS = R"shell:appsFolder\{appid}_{publisher}!{exename}"
 
     __context = None
     __valid = False
-    def __init__(self, context):
+
+    def __init__(self, context, settings):
         self.__context = context
         self.__valid = False
         self.__games = self.__read_repository()
@@ -39,7 +41,7 @@ class WindowsStore:
         return list(map(self.__to_catalog, self.__games))
 
     def fetch_icon(self, item, cache_path):
-        if item["item"]["logo_path"] != None:
+        if item["item"]["logo_path"] is not None:
             # the logo_path is unfortunately not the actual file path, there may be different variants
             # for high-contrast and dpi scaled mods
             filepath, ext = os.path.splitext(item["item"]["logo_path"])
