@@ -19,7 +19,7 @@ https://github.com/TanninOne/keypirinha-allmygames/releases
 
 ## Install
 
-Once the `allmygames.keypirinha-package` file is downloaded,
+Once the `AllMyGames.keypirinha-package` file is downloaded,
 move it to the `InstalledPackage` folder located at:
 
 * `Keypirinha\portable\Profile\InstalledPackages` in **Portable mode**
@@ -32,6 +32,9 @@ move it to the `InstalledPackage` folder located at:
 * Uses vdf-parser by Rossen Georgiev: https://github.com/rossengeorgiev/vdf-parser
 
 ## Change Log
+
+### v1.4
+* support for new steam config format
 
 ### v1.3
 * code cleanup and log messages more standardized (thanks to ueffel)

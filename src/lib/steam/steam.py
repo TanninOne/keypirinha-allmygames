@@ -206,6 +206,24 @@ class Steam:
             return reduce(to_appinfo_dict, appinfo, {})
 
     def __get_library_paths(self, install_path: str):
+        if os.path.exists(os.path.join(install_path, 'config', 'libraryfolders.vdf')):
+            self.__context.info("new libraries format")
+            return self.__get_library_paths_new(install_path)
+        else:
+            self.__context.info("old libraries format")
+            return self.__get_library_paths_old(install_path)
+
+    def __get_library_paths_new(self, install_path: str):
+        with open(os.path.join(install_path, 'config', 'libraryfolders.vdf')) as fd:
+            # the vdf library is case sensitive but the format actually seems to
+            # be case insensitive
+            vdict = CILookup(vdfload(fd))
+            base = vdict['libraryfolders']
+            return list(map(
+                lambda x: base[x]["path"],
+                filter(lambda x: x.isnumeric(), base.keys())))
+
+    def __get_library_paths_old(self, install_path: str):
         with open(os.path.join(install_path, 'config', 'config.vdf')) as fd:
             # the vdf library is case sensitive but the format actually seems to
             # be case insensitive
