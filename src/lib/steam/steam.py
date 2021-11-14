@@ -241,7 +241,7 @@ class Steam:
         apps_path = os.path.join(library_path, 'steamapps')
         for manifest_path in filter(is_manifest, os.listdir(apps_path)):
             try:
-                with open(os.path.join(apps_path, manifest_path)) as fd:
+                with open(os.path.join(apps_path, manifest_path), encoding='utf8') as fd:
                     manifest = vdfload(fd)
                     appid = manifest['AppState']['appid']
                     iconid = None
