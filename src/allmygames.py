@@ -109,7 +109,11 @@ class AllMyGames(kp.Plugin):
         self.__repos[repo].run(kpu, target, item.raw_args())
 
     def make_item(self, repo: str, item: dict):
-        icon_handle = self.get_icon(repo, item)
+        try:
+            icon_handle = self.get_icon(repo, item)
+        except:
+            self.warn("Failed to read icon for {}:{}", repo, item["target"])
+            icon_handle = None
         valid_parameters = set(['category', 'label', 'target', 'short_desc', 'args_hint', 'hit_hint'])
         item = {k: v for k, v in item.items() if k in valid_parameters}
         item = {
