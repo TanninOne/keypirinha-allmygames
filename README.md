@@ -33,6 +33,10 @@ move it to the `InstalledPackage` folder located at:
 
 ## Change Log
 
+### v1.5
+* fixed: steam game names not supporting utf8
+* fixed: game not added to catalog if reading icon failed
+
 ### v1.4
 * support for new steam config format
 
