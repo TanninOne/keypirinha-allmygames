@@ -33,6 +33,9 @@ move it to the `InstalledPackage` folder located at:
 
 ## Change Log
 
+### v1.6
+* made prefix for catalog items configurable
+
 ### v1.5
 * fixed: steam game names not supporting utf8
 * fixed: game not added to catalog if reading icon failed

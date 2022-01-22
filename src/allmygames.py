@@ -116,11 +116,22 @@ class AllMyGames(kp.Plugin):
             icon_handle = None
         valid_parameters = set(['category', 'label', 'target', 'short_desc', 'args_hint', 'hit_hint'])
         item = {k: v for k, v in item.items() if k in valid_parameters}
+
+        prefix = self.__settings.get("prefix", "main", "AMG")
+        store_prefix = self.__settings.get_bool("store_prefix", "main", True)
+        fmt = ": {name}" if (store_prefix or prefix != "") else "{name}"
+        sep = ""
+        if store_prefix:
+            fmt = "{store}" + fmt
+            sep = " "
+        if prefix != "":
+            fmt = prefix + sep + fmt
+
         item = {
             **self.__item_base,
             "short_desc": "Launch via {0}".format(repo),
             **item,
-            "label": "AMG {}: {}".format(repo, item["label"]),
+            "label": fmt.format(store=repo, name=item["label"]),
             "data_bag": repo + "|" + item["target"],
             "icon_handle": icon_handle,
         }
