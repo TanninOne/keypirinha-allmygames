@@ -83,7 +83,7 @@ def to_catalog(agg: list, game, direct, store):
 def is_steam_running():
     startupinfo = subprocess.STARTUPINFO()
     startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
-    output, err = subprocess.Popen(["tasklist.exe", 
+    output, err = subprocess.Popen(["tasklist.exe",
                                    "/FI", "IMAGENAME eq steam.exe"],
                                     stdout=subprocess.PIPE).communicate()
     return str(output).find("steam.exe") != -1
@@ -238,28 +238,31 @@ class Steam:
         is_manifest = lambda file_name: file_name.startswith('appmanifest_') and file_name.endswith('.acf')
         games = []
 
-        apps_path = os.path.join(library_path, 'steamapps')
-        for manifest_path in filter(is_manifest, os.listdir(apps_path)):
-            try:
-                with open(os.path.join(apps_path, manifest_path), encoding='utf8') as fd:
-                    manifest = vdfload(fd)
-                    appid = manifest['AppState']['appid']
-                    iconid = None
-                    launchers = None
-                    try:
-                        appinfo = self.__appinfo[appid]["data"]["appinfo"]
-                        iconid = appinfo["common"]["clienticon"]
-                        launchers = appinfo["config"]["launch"]
-                    except:
-                        pass
+        try:
+            apps_path = os.path.join(library_path, 'steamapps')
+            for manifest_path in filter(is_manifest, os.listdir(apps_path)):
+                try:
+                    with open(os.path.join(apps_path, manifest_path), encoding='utf8') as fd:
+                        manifest = vdfload(fd)
+                        appid = manifest['AppState']['appid']
+                        iconid = None
+                        launchers = None
+                        try:
+                            appinfo = self.__appinfo[appid]["data"]["appinfo"]
+                            iconid = appinfo["common"]["clienticon"]
+                            launchers = appinfo["config"]["launch"]
+                        except:
+                            pass
 
-                    games.append({
-                        "appid": appid,
-                        "name": manifest["AppState"]["name"],
-                        "path": os.path.join(apps_path, "common", manifest["AppState"]["installdir"]),
-                        "icon_id": iconid,
-                        "launchers": launchers,
-                    })
-            except Exception as e:
-                self.__context.warn("Failed to read manifest", manifest_path, e)
+                        games.append({
+                            "appid": appid,
+                            "name": manifest["AppState"]["name"],
+                            "path": os.path.join(apps_path, "common", manifest["AppState"]["installdir"]),
+                            "icon_id": iconid,
+                            "launchers": launchers,
+                        })
+                except Exception as e:
+                    self.__context.warn("Failed to read manifest", manifest_path, e)
+        except Exception as e:
+            self.__context.warn("Failed to read library path", library_path, e)
         return games
