@@ -33,6 +33,10 @@ move it to the `InstalledPackage` folder located at:
 
 ## Change Log
 
+### v1.7
+* support for new appinfo.vdf format (in beta as of this writing
+* fixed: no steam games cataloged if steam config contains an invalid library folder
+
 ### v1.6
 * made prefix for catalog items configurable
 

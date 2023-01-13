@@ -15,7 +15,7 @@ osarch = "64" if sys.maxsize > 2**32 else "32"
 def tobool(inp: str):
     return inp.lower() in ["true", "yes", "1"]
 
-def to_appinfo_dict(agg, input):
+def to_appinfo_dict(agg, input, context):
     agg[str(input["appid"])] = input
     return agg
 
@@ -202,15 +202,17 @@ class Steam:
 
     def __get_appinfo(self, install_path: str):
         with open(os.path.join(install_path, 'appcache', 'appinfo.vdf'), "rb") as fd:
-            header, appinfo = parse_appinfo(fd)
-            return reduce(to_appinfo_dict, appinfo, {})
+            try:
+                header, appinfo = parse_appinfo(fd, self.__context)
+            except Exception as e:
+                self.__context.err("Failed to parse appinfo.vdf", e)
+                raise e
+            return reduce(lambda prev, item: to_appinfo_dict(prev, item, self.__context), appinfo, {})
 
     def __get_library_paths(self, install_path: str):
         if os.path.exists(os.path.join(install_path, 'config', 'libraryfolders.vdf')):
-            self.__context.info("new libraries format")
             return self.__get_library_paths_new(install_path)
         else:
-            self.__context.info("old libraries format")
             return self.__get_library_paths_old(install_path)
 
     def __get_library_paths_new(self, install_path: str):
