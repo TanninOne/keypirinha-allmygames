@@ -1,3 +1,4 @@
+import traceback
 import keypirinha as kp
 import keypirinha_util as kpu
 import keypirinha_net as kpnet
@@ -12,34 +13,8 @@ from .lib.origin import Origin
 from .lib.gog import GOG
 from .lib.uplay import UPlay
 from .lib.windowsstore import WindowsStore
+from .lib.util import RepoContext
 
-
-class RepoContext:
-    def __init__(self, plugin: kp.Plugin, id: str):
-        """ Proxy for the kp.Plugin object passed to the individal repository implementations
-
-        Arguments:
-            plugin {[kp.Plugin]} -- The plugin to wrap
-            id {[string]} -- ID of the repository this is used with. Will be prepended to all log messages
-        """
-        self.__plugin = plugin
-        self.__id = id
-
-    def dbg(self, msg: str, *args):
-        return self.__plugin.dbg("[{id}] {msg}".format(id=self.__id, msg=msg), *args)
-
-    def info(self, msg: str, *args):
-        return self.__plugin.info("[{id}] {msg}".format(id=self.__id, msg=msg), *args)
-
-    def warn(self, msg: str, *args):
-        return self.__plugin.warn("[{id}] {msg}".format(id=self.__id, msg=msg), *args)
-
-    def err(self, msg: str, *args):
-        return self.__plugin.err("[{id}] {msg}".format(id=self.__id, msg=msg), *args)
-
-    @property
-    def plugin(self):
-        return self.__plugin
 
 class AllMyGames(kp.Plugin):
 
@@ -91,7 +66,7 @@ class AllMyGames(kp.Plugin):
                 self.__repos[name] = clazz(RepoContext(self, name), {k: self.__settings.get(k, name) for k in self.__settings.keys(name)})
             except Exception as e:
                 # probably just not installed
-                self.warn("failed to initialize repo", name, e)
+                self.warn("failed to initialize repo", name, traceback.format_exc())
 
         self.info("Games found", ["{}: {}".format(repo, len(self.__repos[repo].items)) for repo in self.__repos.keys()])
 

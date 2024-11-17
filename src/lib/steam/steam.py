@@ -5,10 +5,12 @@ import subprocess
 import sys
 import time
 from hashlib import sha1
+import traceback
 from .vdf import load as vdfload, parse_appinfo
 from ..util import CILookup
 from functools import reduce
 from winreg import ConnectRegistry, OpenKeyEx, QueryValueEx, HKEY_CURRENT_USER
+from ..util import RepoContext
 
 osarch = "64" if sys.maxsize > 2**32 else "32"
 
@@ -91,7 +93,7 @@ def is_steam_running():
 class Steam:
     PATH = r"SOFTWARE\Valve\Steam"
 
-    __context = None
+    __context: RepoContext = None
     __valid = False
     __exe_path = None
     __install_path = None
@@ -99,7 +101,7 @@ class Steam:
     __direct = False
     __store = True
 
-    def __init__(self, context, settings):
+    def __init__(self, context: RepoContext, settings):
         self.__context = context
         self.__valid = False
         self.__direct = tobool(settings.get("direct", "false"))
@@ -205,7 +207,7 @@ class Steam:
             try:
                 header, appinfo = parse_appinfo(fd, self.__context)
             except Exception as e:
-                self.__context.err("Failed to parse appinfo.vdf", e)
+                self.__context.err("Failed to parse appinfo.vdf", traceback.format_exc())
                 raise e
             return reduce(lambda prev, item: to_appinfo_dict(prev, item, self.__context), appinfo, {})
 

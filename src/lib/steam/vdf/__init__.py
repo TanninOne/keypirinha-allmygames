@@ -8,11 +8,12 @@ https://github.com/ValvePython/steam
 __version__ = "3.3"
 __author__ = "Rossen Georgiev"
 
+import io
 import re
 import sys
 import struct
 from binascii import crc32
-from io import BytesIO
+from io import BufferedReader, BytesIO
 from io import StringIO as unicodeIO
 
 try:
@@ -22,23 +23,12 @@ except:
 
 from .vdict import VDFDict
 
-# Py2 & Py3 compatibility
-if sys.version_info[0] >= 3:
-    string_type = str
-    int_type = int
-    BOMS = '\ufffe\ufeff'
+string_type = str
+int_type = int
+BOMS = '\ufffe\ufeff'
 
-    def strip_bom(line):
-        return line.lstrip(BOMS)
-else:
-    from StringIO import StringIO as strIO
-    string_type = basestring
-    int_type = long
-    BOMS = '\xef\xbb\xbf\xff\xfe\xfe\xff'
-    BOMS_UNICODE = '\\ufffe\\ufeff'.decode('unicode-escape')
-
-    def strip_bom(line):
-        return line.lstrip(BOMS if isinstance(line, str) else BOMS_UNICODE)
+def strip_bom(line):
+    return line.lstrip(BOMS)
 
 # string escaping
 _unescape_char_map = {
@@ -286,7 +276,7 @@ BIN_END         = b'\x08'
 BIN_INT64       = b'\x0A'
 BIN_END_ALT     = b'\x0B'
 
-def binary_loads(b, mapper=dict, merge_duplicate_keys=True, alt_format=False, raise_on_remaining=True):
+def binary_loads(b, mapper=dict, merge_duplicate_keys=True, alt_format=False, raise_on_remaining=True, string_table=None):
     """
     Deserialize ``b`` (``bytes`` containing a VDF in "binary form")
     to a Python object.
@@ -302,9 +292,9 @@ def binary_loads(b, mapper=dict, merge_duplicate_keys=True, alt_format=False, ra
     if not isinstance(b, bytes):
         raise TypeError("Expected s to be bytes, got %s" % type(b))
 
-    return binary_load(BytesIO(b), mapper, merge_duplicate_keys, alt_format, raise_on_remaining)
+    return binary_load(BytesIO(b), mapper, merge_duplicate_keys, alt_format, raise_on_remaining, string_table)
 
-def binary_load(fp, mapper=dict, merge_duplicate_keys=True, alt_format=False, raise_on_remaining=False):
+def binary_load(fp, mapper=dict, merge_duplicate_keys=True, alt_format=False, raise_on_remaining=False, string_table=None):
     """
     Deserialize ``fp`` (a ``.read()``-supporting file-like object containing
     binary VDF) to a Python object.
@@ -373,7 +363,13 @@ def binary_load(fp, mapper=dict, merge_duplicate_keys=True, alt_format=False, ra
                 continue
             break
 
-        key = read_string(fp)
+        if string_table is None:
+            key = read_string(fp)
+        else:
+            idx = uint32.unpack(fp.read(4))[0]
+            if idx > len(string_table):
+                raise Exception(f"idx out of range: {idx} / {len(string_table)}")
+            key = string_table[idx]
 
         if t == BIN_NONE:
             if merge_duplicate_keys and key in stack[-1]:
@@ -514,7 +510,7 @@ def vbkv_dumps(obj):
 uint32 = struct.Struct('<I')
 uint64 = struct.Struct('<Q')
 
-def parse_appinfo(fp):
+def parse_appinfo(fp: BufferedReader):
     """Parse appinfo.vdf from the Steam appcache folder
 
     :param fp: file-like object
@@ -522,27 +518,29 @@ def parse_appinfo(fp):
     :rtype: (:class:`dict`, :class:`Generator`)
     :return: (header, apps iterator)
     """
-# format:
-#   uint32   - MAGIC: b"'DV\x07" or b"(DV\x07"
-#   uint32   - UNIVERSE: 1
-#   ---- repeated app sections ----
-#   uint32   - AppID
-#   uint32   - size
-#   uint32   - infoState
-#   uint32   - lastUpdated
-#   uint64   - accessToken
-#   20bytes  - SHA1
-#   uint32   - changeNumber
-#   20bytes  - SHA1 (of binary data, only if magic is 'DV\x07'
-#   variable - binary_vdf
-#   ---- end of section ---------
-#   uint32   - EOF: 0
 
     magic = fp.read(4)
-    if magic not in (b"'DV\x07", b"(DV\x07"):
+    if magic not in (b"'DV\x07", b"(DV\x07", b")DV\x07"):
         raise SyntaxError("Invalid magic, got %s" % repr(magic))
 
-    universe = uint32.unpack(fp.read(4))[0]
+    universe:int = uint32.unpack(fp.read(4))[0]
+
+    string_table = None
+
+    if magic == b")DV\x07":
+        string_table_offset = uint64.unpack(fp.read(8))[0]
+        string_table = []
+
+        offset = fp.tell()
+        fp.seek(0, io.SEEK_END)
+        total_size = fp.tell()
+        fp.seek(string_table_offset)
+        item_count = uint32.unpack(fp.read(4))[0]
+        # assuming the string table goes to the end of the file
+        string_table_raw = fp.read(total_size - (string_table_offset + 4))
+        split = string_table_raw.split(b'\x00')[0:item_count]
+        string_table = [b.decode('utf-8') for b in split]
+        fp.seek(offset)
 
     def apps_iter():
         while True:
@@ -561,10 +559,10 @@ def parse_appinfo(fp):
                 'change_number': uint32.unpack(fp.read(4))[0],
             }
 
-            if magic == b"(DV\x07":
+            if magic in (b"(DV\x07", b")DV\x07"):
                 app['binary_data_hash'] = fp.read(20)
 
-            app['data'] = binary_load(fp)
+            app['data'] = binary_load(fp, string_table=string_table)
 
             yield app
 
@@ -572,6 +570,7 @@ def parse_appinfo(fp):
     return ({
               'magic': magic,
               'universe': universe,
+              'string_table': string_table_offset,
             },
             apps_iter()
             )
