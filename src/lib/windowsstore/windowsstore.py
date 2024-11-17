@@ -98,7 +98,8 @@ class WindowsStore:
                     visuals = app.getElementsByTagName("uap:VisualElements")[0]
                     logo_path = visuals.getAttribute("Square150x150Logo")
                 except Exception as e:
-                    self.__context.warn("failed to get logo", exeid, e)
+                    self.__context.info("app without logo ignored", exeid, e)
+                    continue
 
                 id_parts = sub_key_name.split("_")
                 games.append({

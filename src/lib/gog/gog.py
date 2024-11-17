@@ -64,6 +64,6 @@ class GOG:
                 else:
                     self.__context.warn("not found", exe)
             except Exception as e:
-                self.__context.warn("Failed to read game info", e)
+                self.__context.warn("Failed to read game info", sub_key_name, e)
 
         return games
