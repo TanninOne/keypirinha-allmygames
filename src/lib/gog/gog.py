@@ -62,8 +62,10 @@ class GOG:
                         "exe_path": exe,
                     })
                 else:
+                    # this probably means the game wasn't correctly uninstalled
                     self.__context.warn("not found", exe)
             except Exception as e:
-                self.__context.warn("Failed to read game info", sub_key_name, e)
+                # this is not an issue, DLCs don't have an exe
+                self.__context.info("Incomplete game info (could be DLC/Addon)", sub_key_name, e)
 
         return games

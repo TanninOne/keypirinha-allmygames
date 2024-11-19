@@ -205,7 +205,7 @@ class Steam:
     def __get_appinfo(self, install_path: str):
         with open(os.path.join(install_path, 'appcache', 'appinfo.vdf'), "rb") as fd:
             try:
-                header, appinfo = parse_appinfo(fd, self.__context)
+                header, appinfo = parse_appinfo(fd)
             except Exception as e:
                 self.__context.err("Failed to parse appinfo.vdf", traceback.format_exc())
                 raise e

@@ -33,6 +33,10 @@ move it to the `InstalledPackage` folder located at:
 
 ## Change Log
 
+### v1.7.3
+* fixed: steam detection failed due to left-over debug code
+* slightly improved logging messages
+
 ### v1.7.2
 * support for even newer appinfo.vdf format
 * no longer warn about windows apps without icon

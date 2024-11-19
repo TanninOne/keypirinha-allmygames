@@ -53,6 +53,13 @@ class Origin:
 
         games = []
 
+        manifests = []
+        try:
+            manifests = os.listdir(manifests_path)
+        except FileNotFoundError:
+            self.__context.info("No Origin manifests, the EA App is not supported")
+            return []
+
         for game_name in os.listdir(manifests_path):
             for manifest_name in filter(is_manifest, os.listdir(os.path.join(manifests_path, game_name))):
                 try:
@@ -69,7 +76,6 @@ class Origin:
                         # if the game was moved this path wouldn't be valid any more
                         if "dipinstallpath" in parameters\
                             and (os.path.exists(parameters["dipinstallpath"]) or True):
-                            self.__context
                             games.append({
                                 "appid": parameters["id"],
                                 "name": game_name,
