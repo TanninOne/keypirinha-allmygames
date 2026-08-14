@@ -12,6 +12,11 @@ Currently supported stores:
 - Origin
 - UPlay
 
+## Abandoned
+
+I no longer use Microslop windows and Keypirinha so please don't expect further updates or bugfixes.
+If you're interested in taking over development, feel free to fork or contact me.
+
 ## Download
 
 https://github.com/TanninOne/keypirinha-allmygames/releases
